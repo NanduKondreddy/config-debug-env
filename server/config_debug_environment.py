@@ -56,10 +56,19 @@ class ConfigDebugEnvironment(Environment):
         task_id = self._current_task_id()
         task = get_task(task_id)
 
-        # Run the grader
-        reward, error_message, bugs_fixed = task.grader(action.fixed_config)
+        # Run the grader (returns float for validator compatibility)
+        grader_result = task.grader(action.fixed_config)
         
-        # DEBUG: Log raw grader output before clamping
+        # Convert to internal tuple format (reward, error_msg, bugs_fixed)
+        if isinstance(grader_result, tuple):
+            reward, error_message, bugs_fixed = grader_result
+        else:
+            # Grader returns float - convert to tuple
+            reward = grader_result
+            error_message = ""
+            bugs_fixed = []
+        
+        # DEBUG: Log raw grader output
         print(
             f"[GRADER DEBUG] task={task_id} "
             f"reward={reward} "

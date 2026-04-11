@@ -1,7 +1,7 @@
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple, Union
 
 from server.tasks import task1_json, task2_yaml, task3_dockerfile
-from server.graders.grader_api import grade_task1, grade_task2, grade_task3
+from server.graders.grader_api import grade_task1_float, grade_task2_float, grade_task3_float
 
 
 class TaskInfo:
@@ -14,8 +14,9 @@ class TaskInfo:
         self.broken_config: str = module.BROKEN_CONFIG
         self.error_message: str = module.ERROR_MESSAGE
         self.ground_truth: str = module.GROUND_TRUTH
-        # Grader returns (reward: float, error_msg: str, bugs_fixed: list)
-        self.grader: Callable[[str], Tuple[float, str, List[str]]] = grader_func
+        # Grader returns float (for validator compatibility)
+        # Environment will handle conversion to tuple format if needed
+        self.grader: Callable[[str], float] = grader_func
 
 
 TASK_ORDER = [
@@ -25,9 +26,9 @@ TASK_ORDER = [
 ]
 
 TASK_REGISTRY: Dict[str, TaskInfo] = {
-    "task1_json": TaskInfo(task1_json, grade_task1),
-    "task2_yaml": TaskInfo(task2_yaml, grade_task2),
-    "task3_dockerfile": TaskInfo(task3_dockerfile, grade_task3),
+    "task1_json": TaskInfo(task1_json, grade_task1_float),
+    "task2_yaml": TaskInfo(task2_yaml, grade_task2_float),
+    "task3_dockerfile": TaskInfo(task3_dockerfile, grade_task3_float),
 }
 
 
