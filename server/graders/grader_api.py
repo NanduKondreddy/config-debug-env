@@ -16,15 +16,15 @@ def _extract_and_clamp_reward(result):
     """Extract and clamp reward from grader result.
     
     Returns:
-        float: Clamped reward in (0.001, 0.999) range
+        float: Clamped reward in [0.0, 1.0] range (validator specification)
     """
     if isinstance(result, tuple):
         reward, _, _ = result
     else:
         reward = result
     
-    # Clamp to strict (0.001, 0.999) range to avoid exact boundaries
-    return max(0.001, min(0.999, float(reward)))
+    # Clamp to [0.0, 1.0] range per validator specification
+    return max(0.0, min(1.0, float(reward)))
 
 
 def _tuple_from_raw(result):
