@@ -1,9 +1,7 @@
-from typing import Callable, Dict, Tuple, List
+from typing import Callable, Dict, List
 
 from server.tasks import task1_json, task2_yaml, task3_dockerfile
-from server.graders.json_grader import grade_task1
-from server.graders.yaml_grader import grade_task2
-from server.graders.dockerfile_grader import grade_task3
+from server.graders.grader_api import grade_task1, grade_task2, grade_task3
 
 
 class TaskInfo:
@@ -16,7 +14,7 @@ class TaskInfo:
         self.broken_config: str = module.BROKEN_CONFIG
         self.error_message: str = module.ERROR_MESSAGE
         self.ground_truth: str = module.GROUND_TRUTH
-        self.grader: Callable[[str], Tuple[float, str, List[str]]] = grader_func
+        self.grader: Callable[[str], float] = grader_func
 
 
 TASK_ORDER = [
