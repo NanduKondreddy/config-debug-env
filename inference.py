@@ -229,6 +229,12 @@ async def main() -> None:
             step_num += 1
 
             fixed_config = get_model_message(client, obs, step_num, history, model_name)
+            
+            # DEBUG: Log the exact string being sent to grader
+            print(f"[FINAL FIXED CONFIG SENT TO GRADER] step={step_num} task={obs.get('task_id', 'unknown')}", flush=True)
+            print(f"Length: {len(fixed_config)} chars", flush=True)
+            print(f"First 300 chars: {repr(fixed_config[:300])}", flush=True)
+            print("[END FIXED CONFIG]", flush=True)
 
             step_result = await env.step({"fixed_config": fixed_config})
             obs = step_result["observation"]
