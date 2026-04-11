@@ -20,7 +20,7 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     try:
         config = yaml.safe_load(fixed_config)
     except Exception as e:
-        return 0.05, f"Invalid YAML format: {str(e)}\", [\"yaml\"]
+        return 0.05, f"Invalid YAML format: {str(e)}", ["yaml"]
 
     # --- STEP 1: replicas fix (0.0 → 0.4) ---
     try:
