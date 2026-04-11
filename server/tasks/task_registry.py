@@ -46,3 +46,13 @@ def get_task(task_id: str) -> TaskInfo:
 
 def get_all_task_ids() -> List[str]:
     return list(TASK_ORDER)
+
+
+# Diagnostic logging on module load
+print(f"[TASK REGISTRY] Loaded tasks: {list(TASK_REGISTRY.keys())}", flush=True)
+
+for tid, task in TASK_REGISTRY.items():
+    print(
+        f"[TASK] id={tid} grader={task.grader.__name__} file_type={task.file_type} num_bugs={task.num_bugs}",
+        flush=True
+    )
