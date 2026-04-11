@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+pyyaml
+httpx
+openai
+gradio
+openenv-core>=0.2.0

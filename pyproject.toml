@@ -1,0 +1,22 @@
+[project]
+name = "config-debug-env"
+version = "1.0.0"
+description = "An RL environment for debugging broken configuration files"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "pyyaml",
+    "httpx",
+    "openai",
+    "gradio",
+    "openenv-core>=0.2.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.backends._legacy:_Backend"
