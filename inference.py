@@ -28,17 +28,27 @@ IMAGE_NAME = None  # Will be read at runtime
 TASK_NAME = "config-debug"  # Default
 BENCHMARK = "config_debug_env"  # Default
 MAX_STEPS = 35  # 7 tasks × 5 steps each
-TEMPERATURE = 0.1
-MAX_TOKENS = 2000
+TEMPERATURE = 0.0  # Deterministic output for consistency
+MAX_TOKENS = 4000  # Ensure enough room for full config responses
 SUCCESS_SCORE_THRESHOLD = 0.5  # normalized score in [0, 1]
 MAX_TOTAL_REWARD = 7.0  # 7 tasks, 1.0 max per task
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
-    You are an expert DevOps engineer specializing in configuration file debugging.
-    You will be given a broken configuration file and must fix ALL bugs in it.
-    Return ONLY the fixed configuration file content.
-    No explanations, no markdown formatting, no code blocks. Just the raw fixed configuration.
+    You are an expert DevOps/Infrastructure engineer specializing in configuration file debugging.
+    
+    Your task: Fix ALL bugs in the provided configuration file.
+    
+    CRITICAL RULES:
+    1. Analyze the error message carefully - it identifies the exact problems
+    2. Fix EVERY bug mentioned in "Number of bugs to find"
+    3. Preserve exact formatting and indentation from the original (except fixes)
+    4. Validate syntax BEFORE returning - no invalid XML/JSON/YAML
+    5. Return ONLY the fixed configuration file content - absolutely no explanations or comments
+    6. Keep identical all lines that have no bugs
+    7. If there are multiple bugs, fix them ALL in one response
+    
+    SUCCESS CRITERIA: Your output must pass syntax validation and fix all identified bugs.
     """
 ).strip()
 
@@ -78,27 +88,31 @@ def strip_code_blocks(text: str) -> str:
 
 
 def build_user_prompt(obs: dict, step: int, history: List[str]) -> str:
-    history_block = "\n".join(history[-4:]) if history else "None"
+    history_block = "\n".join(history[-3:]) if history else "None"
+    
     return textwrap.dedent(
         f"""
-        Fix the following broken {obs['file_type']} configuration file.
-
-        Task: {obs['task_description']}
-        Difficulty: {obs['difficulty']}
-        Number of bugs to find: {obs['num_bugs']}
-        Bugs fixed so far: {obs['bugs_found_so_far']}
-        Error message: {obs['error_message']}
-        Step: {step}
-
-        Previous attempts:
+        FILE TYPE: {obs['file_type'].upper()}
+        TASK: {obs['task_description']}
+        DIFFICULTY: {obs['difficulty']}
+        TOTAL BUGS TO FIX: {obs['num_bugs']}
+        BUGS FIXED SO FAR: {obs['bugs_found_so_far']} of {obs['num_bugs']}
+        CURRENT ERROR: {obs['error_message']}
+        STEP: {step}
+        
+        PREVIOUS FAILED ATTEMPTS:
         {history_block}
-
-        Broken configuration:
-        ```
+        
+        THE BROKEN CONFIGURATION:
         {obs['broken_config']}
-        ```
-
-        Return ONLY the fixed configuration file content.
+        
+        INSTRUCTIONS:
+        1. Review the error message above - it tells you exactly what is broken
+        2. You have found {obs['bugs_found_so_far']} bugs so far, you need to find {obs['num_bugs'] - obs['bugs_found_so_far']} more
+        3. Fix ALL remaining bugs in a single response
+        4. Keep the exact same format/indentation as the original except for the fixes
+        5. Output ONLY the corrected configuration file - no markdown, no explanation, no "```"
+        6. The fixed configuration MUST be syntactically valid {obs['file_type'].upper()}
         """
     ).strip()
 
@@ -117,7 +131,20 @@ def get_model_message(client: OpenAI, obs: dict, step: int, history: List[str], 
             stream=False,
         )
         text = (completion.choices[0].message.content or "").strip()
-        return strip_code_blocks(text) if text else ""
+        
+        # Clean up code blocks and markdown that model may add
+        text = strip_code_blocks(text)
+        
+        # Additional cleanup: remove common markdown/explanatory patterns
+        if text.startswith("Here") or text.startswith("Here's"):
+            # Skip explanatory prefixes
+            lines = text.split("\n")
+            for i, line in enumerate(lines):
+                if not line.startswith("Here"):
+                    text = "\n".join(lines[i:])
+                    break
+        
+        return text if text else ""
     except Exception as exc:
         print(f"[DEBUG] Model request failed: {exc}", flush=True)
         return ""
@@ -128,7 +155,13 @@ async def main() -> None:
     # This ensures no fallback paths or proxy bypass
     api_key = os.environ["API_KEY"]
     api_base_url = os.environ["API_BASE_URL"]
-    model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
+    
+    # Priority: use MODEL_NAME if set, otherwise use strongest available model
+    model_name = os.getenv("MODEL_NAME")
+    if not model_name:
+        # Try stronger models first for better config-debug performance
+        model_name = "gpt-4o"  # Try GPT-4 Omni for stronger reasoning
+    
     task_name = os.getenv("CONFIG_DEBUG_TASK", "config-debug")
     benchmark = os.getenv("CONFIG_DEBUG_BENCHMARK", "config_debug_env")
 
