@@ -132,6 +132,11 @@ def get_model_message(client: OpenAI, obs: dict, step: int, history: List[str], 
         )
         text = (completion.choices[0].message.content or "").strip()
         
+        # DEBUG: Log raw model output before any processing
+        print(f"[MODEL OUTPUT RAW] task={obs.get('task_id', 'unknown')}", flush=True)
+        print(text[:500], flush=True)  # First 500 chars
+        print("[END MODEL OUTPUT]", flush=True)
+        
         # Clean up code blocks and markdown that model may add
         text = strip_code_blocks(text)
         
