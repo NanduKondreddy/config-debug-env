@@ -124,9 +124,10 @@ def get_model_message(client: OpenAI, obs: dict, step: int, history: List[str], 
 
 
 async def main() -> None:
-    # Re-read env vars at runtime (evaluator may inject after module import)
-    api_key = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
-    api_base_url = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+    # Use strict os.environ[] reads for API credentials (validator requirement)
+    # This ensures no fallback paths or proxy bypass
+    api_key = os.environ["API_KEY"]
+    api_base_url = os.environ["API_BASE_URL"]
     model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
     task_name = os.getenv("CONFIG_DEBUG_TASK", "config-debug")
     benchmark = os.getenv("CONFIG_DEBUG_BENCHMARK", "config_debug_env")
