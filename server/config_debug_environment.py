@@ -56,13 +56,60 @@ class ConfigDebugEnvironment(Environment):
         task_id = self._current_task_id()
         task = get_task(task_id)
 
-        # DEBUG: Log WHAT THE VALIDATOR IS SENDING
+        # ========== CRITICAL DIAGNOSTIC: Log everything about the validator submission ==========
+        print("\n" + "="*80, flush=True)
+        print("[VALIDATOR STEP PAYLOAD RECEIVED]", flush=True)
+        print(f"  Action Type: {type(action).__name__}", flush=True)
+        print(f"  Action class: {action.__class__.__module__}.{action.__class__.__name__}", flush=True)
+        print(f"  Task ID: {task_id}", flush=True)
+        
+        # Log fixed_config in detail
+        fc = action.fixed_config
+        print(f"  fixed_config type: {type(fc).__name__}", flush=True)
+        print(f"  fixed_config is None: {fc is None}", flush=True)
+        print(f"  fixed_config length: {len(fc) if fc else 0} chars", flush=True)
+        
+        if fc is None:
+            print("  ⚠️  WARNING: fixed_config is None!", flush=True)
+            fc_display = "(NONE)"
+        elif fc == "":
+            print("  ⚠️  WARNING: fixed_config is empty string!", flush=True)
+            fc_display = "(EMPTY STRING)"
+        else:
+            fc_display = repr(fc[:300])  # First 300 chars
+            print(f"  fixed_config (first 300 chars): {fc_display}", flush=True)
+        
+        # Try to detect format
+        if fc and len(fc) > 0:
+            if fc.strip().startswith("{"):
+                print("  Format detection: Looks like JSON", flush=True)
+            elif fc.strip().startswith("<"):
+                print("  Format detection: Looks like XML", flush=True)
+            elif fc.strip().startswith("---"):
+                print("  Format detection: Looks like YAML", flush=True)
+            else:
+                print(f"  Format detection: Unknown (starts with '{fc[0]}')", flush=True)
+        
+        # Log action attributes
+        print(f"  Action attributes: {dir(action)}", flush=True)
+        try:
+            import json
+            print(f"  Action as dict: {json.dumps(action.model_dump() if hasattr(action, 'model_dump') else action.__dict__, indent=2, default=str)}", flush=True)
+        except Exception as e:
+            print(f"  Could not serialize action: {e}", flush=True)
+        
+        print("="*80 + "\n", flush=True)
+        
+        # Original logging (kept for continuity)
         print(
             f"[VALIDATOR SUBMITTED] task={task_id} "
-            f"fixed_config length={len(action.fixed_config)} chars",
+            f"fixed_config length={len(action.fixed_config) if action.fixed_config else 0} chars",
             flush=True
         )
-        print(f"[SUBMITTED CONFIG FIRST 200 CHARS]: {repr(action.fixed_config[:200])}", flush=True)
+        if action.fixed_config:
+            print(f"[SUBMITTED CONFIG FIRST 200 CHARS]: {repr(action.fixed_config[:200])}", flush=True)
+        else:
+            print(f"[SUBMITTED CONFIG]: (empty or None)", flush=True)
 
         # Run the grader (returns float for validator compatibility)
         grader_result = task.grader(action.fixed_config)
