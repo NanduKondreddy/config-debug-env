@@ -58,6 +58,16 @@ class ConfigDebugEnvironment(Environment):
 
         # Run the grader
         reward, error_message, bugs_fixed = task.grader(action.fixed_config)
+        
+        # DEBUG: Log raw grader output before clamping
+        print(
+            f"[GRADER DEBUG] task={task_id} "
+            f"reward={reward} "
+            f"type={type(reward).__name__} "
+            f"bugs_fixed={bugs_fixed}",
+            flush=True
+        )
+        
         reward = max(0.0, min(1.0, reward))
 
         self.current_step += 1
