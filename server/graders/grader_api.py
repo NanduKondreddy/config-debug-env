@@ -10,6 +10,10 @@ This module provides BOTH interfaces to maximize compatibility.
 from server.graders.json_grader import grade_task1 as _g1
 from server.graders.yaml_grader import grade_task2 as _g2
 from server.graders.dockerfile_grader import grade_task3 as _g3
+from server.graders.compose_grader import grade_task4 as _g4
+from server.graders.k8s_grader import grade_task5 as _g5
+from server.graders.github_actions_grader import grade_task6 as _g6
+from server.graders.nginx_grader import grade_task7 as _g7
 
 
 def _extract_and_clamp_reward(result):
@@ -66,6 +70,30 @@ def grade_task3_float(x):
     return _extract_and_clamp_reward(result)
 
 
+def grade_task4_float(x):
+    """Task 4 (Docker Compose) grader - returns float only for validator compatibility."""
+    result = _g4(x)
+    return _extract_and_clamp_reward(result)
+
+
+def grade_task5_float(x):
+    """Task 5 (Kubernetes) grader - returns float only for validator compatibility."""
+    result = _g5(x)
+    return _extract_and_clamp_reward(result)
+
+
+def grade_task6_float(x):
+    """Task 6 (GitHub Actions) grader - returns float only for validator compatibility."""
+    result = _g6(x)
+    return _extract_and_clamp_reward(result)
+
+
+def grade_task7_float(x):
+    """Task 7 (Nginx) grader - returns float only for validator compatibility."""
+    result = _g7(x)
+    return _extract_and_clamp_reward(result)
+
+
 # =============================================================================
 # RUNTIME INTERFACE: Tuple-returning graders (for environment.py)
 # =============================================================================
@@ -85,4 +113,28 @@ def grade_task2(x):
 def grade_task3(x):
     """Task 3 (Dockerfile) grader - returns tuple for runtime environment."""
     result = _g3(x)
+    return _tuple_from_raw(result)
+
+
+def grade_task4(x):
+    """Task 4 (Docker Compose) grader - returns tuple for runtime environment."""
+    result = _g4(x)
+    return _tuple_from_raw(result)
+
+
+def grade_task5(x):
+    """Task 5 (Kubernetes) grader - returns tuple for runtime environment."""
+    result = _g5(x)
+    return _tuple_from_raw(result)
+
+
+def grade_task6(x):
+    """Task 6 (GitHub Actions) grader - returns tuple for runtime environment."""
+    result = _g6(x)
+    return _tuple_from_raw(result)
+
+
+def grade_task7(x):
+    """Task 7 (Nginx) grader - returns tuple for runtime environment."""
+    result = _g7(x)
     return _tuple_from_raw(result)

@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Tuple, Union
 
-from server.tasks import task1_json, task2_yaml, task3_dockerfile
-from server.graders.grader_api import grade_task1_float, grade_task2_float, grade_task3_float
+from server.tasks import task1_json, task2_yaml, task3_dockerfile, task4_compose, task5_k8s, task6_github_actions, task7_nginx
+from server.graders.grader_api import grade_task1_float, grade_task2_float, grade_task3_float, grade_task4_float, grade_task5_float, grade_task6_float, grade_task7_float
 
 
 class TaskInfo:
@@ -23,12 +23,20 @@ TASK_ORDER = [
     "task1_json",
     "task2_yaml",
     "task3_dockerfile",
+    "task4_compose",
+    "task5_k8s",
+    "task6_github_actions",
+    "task7_nginx",
 ]
 
 TASK_REGISTRY: Dict[str, TaskInfo] = {
     "task1_json": TaskInfo(task1_json, grade_task1_float),
     "task2_yaml": TaskInfo(task2_yaml, grade_task2_float),
     "task3_dockerfile": TaskInfo(task3_dockerfile, grade_task3_float),
+    "task4_compose": TaskInfo(task4_compose, grade_task4_float),
+    "task5_k8s": TaskInfo(task5_k8s, grade_task5_float),
+    "task6_github_actions": TaskInfo(task6_github_actions, grade_task6_float),
+    "task7_nginx": TaskInfo(task7_nginx, grade_task7_float),
 }
 
 
