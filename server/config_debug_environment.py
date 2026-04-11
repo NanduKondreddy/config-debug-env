@@ -58,12 +58,16 @@ async def generate_fix_async(observation: ConfigDebugObservation, step: int = 1)
     Call LLM agent to generate a fix for the current task.
     Returns the fixed configuration string.
     """
-    # Read API credentials (strict env reads like inference.py)
-    try:
-        api_key = os.environ["API_KEY"]
-        api_base_url = os.environ["API_BASE_URL"]
-    except KeyError as e:
-        print(f"[LLM AGENT] Missing env var: {e}", flush=True)
+    # Read API credentials - try multiple env var names for compatibility
+    api_key = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
+    api_base_url = os.getenv("API_BASE_URL")
+    
+    if not api_key:
+        print(f"[LLM AGENT] Missing API_KEY or HF_TOKEN", flush=True)
+        return ""
+    
+    if not api_base_url:
+        print(f"[LLM AGENT] Missing API_BASE_URL", flush=True)
         return ""
     
     # Get model name
