@@ -11,7 +11,7 @@ def grade_task7(fixed_config: str) -> Tuple[float, str, List[str]]:
     
     Returns: (reward, error_message, bugs_fixed_list)
     """
-    reward = 0.0
+    reward = 0.05
     errors = []
     fixed = []
 
@@ -44,6 +44,6 @@ def grade_task7(fixed_config: str) -> Tuple[float, str, List[str]]:
     reward = round(min(reward, 1.0), 2)
 
     if reward == 1.0:
-        return 1.0, "Nginx config fully valid", fixed
+        return 0.95, "Nginx config fully valid", fixed
 
     return reward, " ; ".join(errors), fixed

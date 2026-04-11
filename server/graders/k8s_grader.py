@@ -12,7 +12,7 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     
     Returns: (reward, error_message, bugs_fixed_list)
     """
-    reward = 0.0
+    reward = 0.05
     errors = []
     fixed = []
 
@@ -20,7 +20,7 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     try:
         config = yaml.safe_load(fixed_config)
     except Exception as e:
-        return 0.0, f"Invalid YAML format: {str(e)}", ["yaml"]
+        return 0.05, f"Invalid YAML format: {str(e)}\", [\"yaml\"]
 
     # --- STEP 1: replicas fix (0.0 → 0.4) ---
     try:
@@ -58,7 +58,7 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     reward = round(min(reward, 1.0), 2)
 
     if reward == 1.0:
-        return 1.0, "Deployment config is fully valid", fixed
+        return 0.95, "Deployment config is fully valid", fixed
 
     error_msg = " ; ".join(errors) if errors else "Configuration has issues"
     return reward, error_msg, fixed

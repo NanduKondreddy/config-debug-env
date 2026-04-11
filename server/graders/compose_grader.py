@@ -21,11 +21,11 @@ def grade_task4(submitted_config: str) -> Tuple[float, str, List[str]]:
         config = yaml.safe_load(submitted_config)
         if not isinstance(config, dict):
             error_messages.append("docker-compose config is not a valid mapping")
-            return 0.0, "; ".join(error_messages), bugs_fixed
+            return 0.05, "; ".join(error_messages), bugs_fixed
         bugs_fixed.append("syntax_valid_yaml")
     except yaml.YAMLError as e:
         error_messages.append(f"YAML parse error: {str(e)}")
-        return 0.0, "; ".join(error_messages), bugs_fixed
+        return 0.05, "; ".join(error_messages), bugs_fixed
 
     services = config.get("services", {})
     if not isinstance(services, dict):
@@ -103,7 +103,7 @@ def grade_task4(submitted_config: str) -> Tuple[float, str, List[str]]:
         reward = min(1.0, reward + 0.1)
 
     if len(bugs_fixed) == total_bugs:
-        reward = 1.0
+        reward = 0.95
 
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

@@ -42,7 +42,7 @@ def grade_task1(submitted_config: str) -> Tuple[float, str, List[str]]:
         reward = min(1.0, reward + 0.1)
 
     if len(bugs_fixed) == total_bugs:
-        reward = 1.0
+        reward = 0.95
 
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed
