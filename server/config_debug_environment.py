@@ -56,6 +56,14 @@ class ConfigDebugEnvironment(Environment):
         task_id = self._current_task_id()
         task = get_task(task_id)
 
+        # DEBUG: Log WHAT THE VALIDATOR IS SENDING
+        print(
+            f"[VALIDATOR SUBMITTED] task={task_id} "
+            f"fixed_config length={len(action.fixed_config)} chars",
+            flush=True
+        )
+        print(f"[SUBMITTED CONFIG FIRST 200 CHARS]: {repr(action.fixed_config[:200])}", flush=True)
+
         # Run the grader (returns float for validator compatibility)
         grader_result = task.grader(action.fixed_config)
         
