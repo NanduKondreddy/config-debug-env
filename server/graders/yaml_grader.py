@@ -47,5 +47,7 @@ def grade_task2(submitted_config: str) -> Tuple[float, str, List[str]]:
     if len(bugs_fixed) == total_bugs:
         reward = 0.95
 
+    # Clamp to strict (0,1) range for validator
+    reward = max(0.05, min(0.95, reward))
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

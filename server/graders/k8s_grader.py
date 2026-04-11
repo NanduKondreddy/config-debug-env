@@ -60,5 +60,7 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     if reward == 1.0:
         return 0.95, "Deployment config is fully valid", fixed
 
+    # Clamp to strict (0,1) range for validator
+    reward = max(0.05, min(0.95, reward))
     error_msg = " ; ".join(errors) if errors else "Configuration has issues"
     return reward, error_msg, fixed
