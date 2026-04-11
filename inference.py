@@ -16,6 +16,9 @@ STDOUT FORMAT
     [END]   success=<true|false> steps=<n> score=<score> rewards=<r1,r2,...,rn>
 """
 
+# DEPLOYMENT MARKER: Do NOT remove - used to verify Space is running latest code
+print("=== INFERENCE.PY MODULE LOADED - COMMIT 2794216 ===", flush=True)
+
 import asyncio
 import os
 import textwrap
