@@ -1,13 +1,9 @@
 """FastAPI application for ConfigDebugEnv.
 
-Uses OpenEnv's create_fastapi_app() for standard framework compatibility
-(WebSocket sessions, standard endpoints, grader discovery).
+Uses OpenEnv's create_fastapi_app() for standard framework compatibility.
+The framework handles /reset, /step, /state, /health, /schema, /metadata, /ws.
 """
-import json
 import gradio as gr
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
 
 from openenv.core.env_server import create_fastapi_app
 from server.models import ConfigDebugAction, ConfigDebugObservation, ConfigDebugState
@@ -15,51 +11,12 @@ from server.config_debug_environment import ConfigDebugEnvironment
 from server.tasks.task_registry import get_task, TASK_ORDER
 
 # ---- Create the standard OpenEnv FastAPI app ----
+# The framework registers: /reset, /step, /state, /health, /schema, /metadata, /ws
 app = create_fastapi_app(
     ConfigDebugEnvironment,
     ConfigDebugAction,
     ConfigDebugObservation,
 )
-
-# ---- Remove default routes we need to override ----
-for i, route in enumerate(app.router.routes):
-    if hasattr(route, "path") and route.path == "/reset":
-        app.router.routes.pop(i)
-        print("[APP_INIT] Removed default /reset route for schema fix")
-        break
-
-for i, route in enumerate(app.router.routes):
-    if hasattr(route, "path") and route.path == "/metadata":
-        app.router.routes.pop(i)
-        print("[APP_INIT] Removed default /metadata route for override")
-        break
-
-# ---- Middleware to fix /reset response schema ----
-class ResetSchemaFixMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        if request.url.path == "/reset" and request.method == "POST":
-            if response.status_code == 200:
-                try:
-                    body = b""
-                    async for chunk in response.body_iterator:
-                        body += chunk
-                    data = json.loads(body)
-                    if isinstance(data, dict) and "observation" in data:
-                        fixed_data = {
-                            "observation": data["observation"],
-                            "done": data.get("done", False),
-                            "reward": 0.0,
-                            "metadata": data.get("metadata", {}),
-                            "info": {}
-                        }
-                        print("[MIDDLEWARE] Fixed /reset response schema - added base fields")
-                        return JSONResponse(fixed_data, status_code=200)
-                except Exception as e:
-                    print(f"[MIDDLEWARE] Error fixing reset response: {e}")
-        return response
-
-app.add_middleware(ResetSchemaFixMiddleware)
 
 # ---- Startup Diagnostics ----
 print("[APP_INIT] ConfigDebugEnvironment initialization started")
@@ -72,106 +29,11 @@ for task_id in TASK_ORDER:
         print(f"[APP_INIT] ERROR loading task '{task_id}': {str(e)}")
 
 
-# ---- Custom endpoints ----
+# ---- Custom endpoints (non-conflicting with framework) ----
 
 @app.get("/info")
 def info():
     return {"name": "ConfigDebugEnv", "version": "1.0.0", "status": "running"}
-
-
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
-
-
-@app.get("/metadata")
-def metadata():
-    """Metadata endpoint with grader paths for validator discovery."""
-    print("[VALIDATOR] GET /metadata called")
-    
-    task_grader_map = {
-        "task1_json": "Task1Grader",
-        "task2_yaml": "Task2Grader",
-        "task3_dockerfile": "Task3Grader",
-        "task4_compose": "Task4Grader",
-        "task5_k8s": "Task5Grader",
-        "task6_github_actions": "Task6Grader",
-        "task7_nginx": "Task7Grader",
-    }
-    
-    return {
-        "name": "ConfigDebugEnvironment",
-        "description": "An environment for training AI agents to debug broken configuration files",
-        "version": "1.0.0",
-        "tasks": [
-            {
-                "id": tid,
-                "has_grader": True,
-                "grader": f"server.graders.grader_api:{task_grader_map[tid]}",
-            }
-            for tid in TASK_ORDER
-        ],
-    }
-
-
-@app.post("/reset")
-async def reset_env(request: Request):
-    """Override /reset endpoint to return correct OpenEnv contract schema."""
-    print("[VALIDATOR] POST /reset called - CUSTOM OVERRIDE")
-    try:
-        env = ConfigDebugEnvironment()
-        observation = env.reset()
-        fixed_response = {
-            "observation": observation.model_dump(),
-            "done": False,
-            "reward": 0.0,
-            "metadata": {},
-            "info": {}
-        }
-        print("[VALIDATOR] Reset response formatted with base fields")
-        return fixed_response
-    except Exception as e:
-        print(f"[VALIDATOR] Error in custom reset: {e}")
-        raise
-
-
-@app.post("/grader")
-async def grader_endpoint(request: Request):
-    """Score a submitted config for a specific task without a full episode.
-    The validator calls this to verify each task has a working grader
-    with scores strictly between 0 and 1."""
-    print("[VALIDATOR] POST /grader called")
-    try:
-        body = await request.json()
-        task_id = body.get("task_id", TASK_ORDER[0])
-        submitted_config = body.get("submitted_config",
-            body.get("action", {}).get("fixed_config", "{}"))
-
-        from server.graders.grader_api import (
-            Task1Grader, Task2Grader, Task3Grader,
-            Task4Grader, Task5Grader, Task6Grader, Task7Grader,
-        )
-
-        grader_map = {
-            "task1_json": Task1Grader(),
-            "task2_yaml": Task2Grader(),
-            "task3_dockerfile": Task3Grader(),
-            "task4_compose": Task4Grader(),
-            "task5_k8s": Task5Grader(),
-            "task6_github_actions": Task6Grader(),
-            "task7_nginx": Task7Grader(),
-        }
-
-        grader = grader_map.get(task_id)
-        if grader is None:
-            return {"error": f"Unknown task_id: {task_id}", "score": 0.01}
-
-        score = grader.grade(submitted_config)
-        print(f"[GRADER] task={task_id} score={score}")
-        return {"task_id": task_id, "score": score, "has_grader": True}
-    except Exception as e:
-        print(f"[GRADER] Error: {e}")
-        return {"error": str(e), "score": 0.01}
 
 
 @app.get("/tasks")
@@ -200,15 +62,6 @@ def tasks():
         ],
         "total_tasks": len(TASK_ORDER),
         "tasks_with_graders": len(TASK_ORDER),
-    }
-
-
-@app.get("/schema")
-def schema():
-    return {
-        "action": ConfigDebugAction.model_json_schema(),
-        "observation": ConfigDebugObservation.model_json_schema(),
-        "state": ConfigDebugState.model_json_schema(),
     }
 
 

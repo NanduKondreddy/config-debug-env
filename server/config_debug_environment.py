@@ -23,6 +23,7 @@ class ConfigDebugEnvironment(Environment):
     SUPPORTS_CONCURRENT_SESSIONS = True
 
     def __init__(self):
+        super().__init__()
         self._init_episode()
 
     def _init_episode(self):
@@ -33,7 +34,7 @@ class ConfigDebugEnvironment(Environment):
         self._done = False
         self.tasks_completed: list = []
         self.bugs_found_so_far = 0
-        self.previous_reward = 0.0
+        self.previous_reward = None
         self.current_error_message: Optional[str] = None
         self.current_broken_config: Optional[str] = None
         self._episode_id = str(uuid4())
@@ -164,7 +165,7 @@ class ConfigDebugEnvironment(Environment):
             difficulty=task.difficulty,
             num_bugs=task.num_bugs,
             bugs_found_so_far=self.bugs_found_so_far,
-            previous_reward=self.previous_reward,
+            previous_reward=self.previous_reward if self.previous_reward is not None else 0.01,
             done=self._done,
             reward=self.previous_reward,
         )

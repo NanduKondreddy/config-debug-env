@@ -199,6 +199,13 @@ async def main():
                 log_start(task=current_task, env=benchmark, model=model_name)
 
             result = step_result
+        else:
+            # Loop completed without break — emit [END] for the last active task
+            if task_rewards:
+                task_score = clamp(sum(task_rewards) / len(task_rewards))
+            else:
+                task_score = 0.01
+            log_end(task_score >= 0.5, task_step, task_score, task_rewards)
 
     except Exception as e:
         print(f"[DEBUG] Fatal error: {e}", flush=True)
