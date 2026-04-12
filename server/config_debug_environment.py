@@ -83,7 +83,7 @@ class ConfigDebugEnvironment(Environment):
             error_message = "Grader returned unexpected format"
             bugs_fixed = []
 
-        reward = max(0.01, min(0.99, reward))
+        reward = max(0.01, min(0.90, reward))
 
         self.current_step += 1
         self._global_step += 1
@@ -92,7 +92,7 @@ class ConfigDebugEnvironment(Environment):
         self.current_error_message = error_message
 
         # Check if task is complete
-        task_done = reward >= 0.99 or self.current_step >= MAX_STEPS_PER_TASK
+        task_done = reward >= 0.85 or self.current_step >= MAX_STEPS_PER_TASK
 
         if task_done:
             self.total_reward += reward

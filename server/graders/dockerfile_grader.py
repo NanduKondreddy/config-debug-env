@@ -97,13 +97,7 @@ def grade_task3(submitted_config: str) -> Tuple[float, str, List[str]]:
     has_cmd_or_entrypoint = any(
         l.strip().upper().startswith(("CMD", "ENTRYPOINT")) for l in lines
     )
-    if has_from and has_cmd_or_entrypoint:
-        reward = min(1.0, reward + 0.1)
-
-    if len(bugs_fixed) == total_bugs:
-        reward = 0.99
-
     # Clamp to strict (0,1) range for validator
-    reward = max(0.01, min(0.99, reward))
+    reward = max(0.01, min(0.90, reward))
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

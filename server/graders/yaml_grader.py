@@ -31,10 +31,10 @@ def grade_task2(submitted_config: str) -> Tuple[float, str, List[str]]:
             reward += 0.3
         else:
             error_messages.append("YAML parsed but result is not a mapping/dictionary")
-            return max(0.01, min(0.99, reward)), "; ".join(error_messages), bugs_fixed
+            return max(0.01, min(0.90, reward)), "; ".join(error_messages), bugs_fixed
     except yaml.YAMLError as e:
         error_messages.append(f"YAML parse error: {str(e)}")
-        return max(0.01, min(0.99, reward)), "; ".join(error_messages), bugs_fixed
+        return max(0.01, min(0.90, reward)), "; ".join(error_messages), bugs_fixed
 
     # ===== LEVEL 2: STRUCTURAL VALIDATION =====
     # Check env structure
@@ -76,12 +76,7 @@ def grade_task2(submitted_config: str) -> Tuple[float, str, List[str]]:
             error_messages.append("No valid jobs found or jobs is not an object")
 
     # ===== FINAL REWARD CALCULATION =====
-    # Reward is emergent from actual fixes
-    reward = min(0.99, reward)  # Cap at 0.99 for non-perfect
-    if len(bugs_fixed) == 3:  # All bugs fixed
-        reward = 0.99
-    
-    reward = max(0.01, min(0.99, reward))  # Enforce strict (0,1) interval
+    reward = max(0.01, min(0.90, reward))
     
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

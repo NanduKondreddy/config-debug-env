@@ -28,7 +28,7 @@ SYSTEM_PROMPT = textwrap.dedent("""
 
 
 def clamp(v: float) -> float:
-    return max(0.01, min(0.99, v))
+    return max(0.01, min(0.90, v))
 
 
 def log_start(task: str, env: str, model: str) -> None:

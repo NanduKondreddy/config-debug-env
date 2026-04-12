@@ -55,12 +55,6 @@ def grade_task5(fixed_config: str) -> Tuple[float, str, List[str]]:
     except Exception:
         errors.append("missing or invalid cpu limit")
 
-    reward = round(min(reward, 0.99), 2)
-
-    if reward >= 0.99:
-        return 0.99, "Deployment config is fully valid", fixed
-
-    # Clamp to strict (0,1) range for validator
-    reward = max(0.01, min(0.99, reward))
-    error_msg = " ; ".join(errors) if errors else "Configuration has issues"
+    reward = max(0.01, min(0.90, reward))
+    error_msg = " ; ".join(errors) if errors else "All checks passed!"
     return reward, error_msg, fixed

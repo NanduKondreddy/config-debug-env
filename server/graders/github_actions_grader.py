@@ -45,7 +45,7 @@ def grade_task6(submitted_config: str) -> Tuple[float, str, List[str]]:
     if not isinstance(jobs, dict):
         error_messages.append("'jobs' key is missing or not a mapping")
         reward = len(bugs_fixed) / total_bugs
-        reward = max(0.01, min(0.99, reward))  # Enforce strict bounds
+        reward = max(0.01, min(0.90, reward))
         return reward, "; ".join(error_messages), bugs_fixed
 
     # Bug 2: Check runner names
@@ -155,13 +155,7 @@ def grade_task6(submitted_config: str) -> Tuple[float, str, List[str]]:
     # Calculate reward
     reward = len(bugs_fixed) / total_bugs
 
-    if len(bugs_fixed) >= 1:
-        reward = min(1.0, reward + 0.1)
-
-    if len(bugs_fixed) == total_bugs:
-        reward = 0.95
-
     # Clamp to strict (0,1) range for validator
-    reward = max(0.01, min(0.99, reward))
+    reward = max(0.01, min(0.90, reward))
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

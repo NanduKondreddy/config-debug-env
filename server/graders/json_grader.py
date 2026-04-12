@@ -32,7 +32,7 @@ def grade_task1(submitted_config: str) -> Tuple[float, str, List[str]]:
         error_messages.append(f"JSON parse error: {str(e)}")
         # Return early with syntax failure
         error_msg = "; ".join(error_messages) if error_messages else "JSON syntax error"
-        return max(0.01, min(0.99, reward)), error_msg, bugs_fixed
+        return max(0.01, min(0.90, reward)), error_msg, bugs_fixed
 
     # ===== LEVEL 2: STRUCTURAL VALIDATION =====
     # Check env structure
@@ -82,12 +82,7 @@ def grade_task1(submitted_config: str) -> Tuple[float, str, List[str]]:
             error_messages.append(f"Missing volume keys: {missing}")
 
     # ===== FINAL REWARD CALCULATION =====
-    # Reward is emergent from actual fixes, not hard-coded
-    reward = min(0.99, reward)  # Cap at 0.99 for non-perfect
-    if len(bugs_fixed) == 5:  # All bugs fixed
-        reward = 0.99
-    
-    reward = max(0.01, min(0.99, reward))  # Enforce strict (0,1) interval
+    reward = max(0.01, min(0.90, reward))
     
     error_msg = "; ".join(error_messages) if error_messages else "All checks passed!"
     return reward, error_msg, bugs_fixed

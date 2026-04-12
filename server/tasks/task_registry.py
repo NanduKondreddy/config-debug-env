@@ -15,10 +15,10 @@ from server.graders.nginx_grader import grade_task7
 
 
 def _clamp_grader(fn):
-    """Wrap raw grader to clamp reward to (0.01, 0.99) while preserving tuple return."""
+    """Wrap raw grader to clamp reward to (0.01, 0.90) while preserving tuple return."""
     def wrapper(submitted_config: str) -> Tuple[float, str, List[str]]:
         reward, error_msg, bugs_fixed = fn(submitted_config)
-        reward = max(0.01, min(0.99, float(reward)))
+        reward = max(0.01, min(0.90, float(reward)))
         return reward, error_msg, bugs_fixed
     wrapper.__name__ = fn.__name__
     wrapper.__qualname__ = fn.__qualname__

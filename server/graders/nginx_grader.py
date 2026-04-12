@@ -83,11 +83,7 @@ def grade_task7(fixed_config: str) -> Tuple[float, str, List[str]]:
             )
 
     # ===== FINAL REWARD CALCULATION =====
-    reward = min(0.99, reward)
-    if len(bugs_fixed) == 3:  # All bugs fixed
-        reward = 0.99
-    
-    reward = max(0.01, min(0.99, reward))
+    reward = max(0.01, min(0.90, reward))
     
     error_msg = " ; ".join(errors) if errors else "All checks passed!"
     return reward, error_msg, bugs_fixed
