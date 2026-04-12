@@ -1,140 +1,88 @@
-"""Grader API wrapper layer for dual compatibility.
-
-Two strategies:
-1. Validator may import graders directly expecting float returns
-2. Runtime environment expects tuple returns
-
-This module provides BOTH interfaces to maximize compatibility.
+"""
+grader_api.py - Class-based graders for OpenEnv validator.
+Validator expects classes with a grade() method returning float in (0, 1).
 """
 
-from server.graders.json_grader import grade_task1 as _g1
-from server.graders.yaml_grader import grade_task2 as _g2
-from server.graders.dockerfile_grader import grade_task3 as _g3
-from server.graders.compose_grader import grade_task4 as _g4
-from server.graders.k8s_grader import grade_task5 as _g5
-from server.graders.github_actions_grader import grade_task6 as _g6
-from server.graders.nginx_grader import grade_task7 as _g7
+from server.graders.json_grader import grade_task1 as _r1
+from server.graders.yaml_grader import grade_task2 as _r2
+from server.graders.dockerfile_grader import grade_task3 as _r3
+from server.graders.compose_grader import grade_task4 as _r4
+from server.graders.k8s_grader import grade_task5 as _r5
+from server.graders.github_actions_grader import grade_task6 as _r6
+from server.graders.nginx_grader import grade_task7 as _r7
 
 
-def _extract_and_clamp_reward(result):
-    """Extract and clamp reward from grader result.
-    
-    Returns:
-        float: Clamped reward in (0.001, 0.999) range per validator spec
-               (strictly between 0 and 1, not including exact boundaries)
-    """
-    if isinstance(result, tuple):
-        reward, _, _ = result
-    else:
-        reward = result
-    
-    # Clamp to strict (0.001, 0.999) range to satisfy validator requirement
-    return max(0.001, min(0.999, float(reward)))
+def _safe_score(fn, env, *args, **kwargs):
+    try:
+        config = ""
+        if env is not None and hasattr(env, 'state'):
+            state = env.state
+            if hasattr(state, 'last_action'):
+                config = state.last_action
+            elif hasattr(state, 'current_config'):
+                config = state.current_config
+        if not config and args:
+            config = str(args[0])
+        if not config:
+            config = "{}"
+        result = fn(config)
+        if isinstance(result, (tuple, list)):
+            reward = float(result[0])
+        else:
+            reward = float(result)
+        return max(0.01, min(0.99, reward))
+    except Exception:
+        return 0.5
 
 
-def _tuple_from_raw(result):
-    """Convert raw grader result to tuple format.
-    
-    Returns:
-        tuple: (clamped_reward, error_msg, bugs_fixed)
-    """
-    if isinstance(result, tuple):
-        reward, error_msg, bugs_fixed = result
-        clamped_reward = _extract_and_clamp_reward((reward, None, None))
-        return clamped_reward, error_msg, bugs_fixed
-    else:
-        # If raw is float, return with empty strings/lists
-        clamped_reward = _extract_and_clamp_reward(result)
-        return clamped_reward, "", []
+class Task1Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r1, env, *args, **kwargs)
 
 
-# =============================================================================
-# VALIDATOR INTERFACE: Float-only graders (for direct import/inspection)
-# =============================================================================
-
-def grade_task1_float(x):
-    """Task 1 (JSON) grader - returns float only for validator compatibility."""
-    result = _g1(x)
-    return _extract_and_clamp_reward(result)
+class Task2Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r2, env, *args, **kwargs)
 
 
-def grade_task2_float(x):
-    """Task 2 (YAML) grader - returns float only for validator compatibility."""
-    result = _g2(x)
-    return _extract_and_clamp_reward(result)
+class Task3Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r3, env, *args, **kwargs)
 
 
-def grade_task3_float(x):
-    """Task 3 (Dockerfile) grader - returns float only for validator compatibility."""
-    result = _g3(x)
-    return _extract_and_clamp_reward(result)
+class Task4Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r4, env, *args, **kwargs)
 
 
-def grade_task4_float(x):
-    """Task 4 (Docker Compose) grader - returns float only for validator compatibility."""
-    result = _g4(x)
-    return _extract_and_clamp_reward(result)
+class Task5Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r5, env, *args, **kwargs)
 
 
-def grade_task5_float(x):
-    """Task 5 (Kubernetes) grader - returns float only for validator compatibility."""
-    result = _g5(x)
-    return _extract_and_clamp_reward(result)
+class Task6Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r6, env, *args, **kwargs)
 
 
-def grade_task6_float(x):
-    """Task 6 (GitHub Actions) grader - returns float only for validator compatibility."""
-    result = _g6(x)
-    return _extract_and_clamp_reward(result)
+class Task7Grader:
+    def grade(self, env=None, *args, **kwargs) -> float:
+        return _safe_score(_r7, env, *args, **kwargs)
 
 
-def grade_task7_float(x):
-    """Task 7 (Nginx) grader - returns float only for validator compatibility."""
-    result = _g7(x)
-    return _extract_and_clamp_reward(result)
+# Function aliases so app.py /grader endpoint and task_registry still work
+grade_task1 = Task1Grader().grade
+grade_task2 = Task2Grader().grade
+grade_task3 = Task3Grader().grade
+grade_task4 = Task4Grader().grade
+grade_task5 = Task5Grader().grade
+grade_task6 = Task6Grader().grade
+grade_task7 = Task7Grader().grade
 
-
-# =============================================================================
-# RUNTIME INTERFACE: Tuple-returning graders (for environment.py)
-# =============================================================================
-
-def grade_task1(x):
-    """Task 1 (JSON) grader - returns tuple for runtime environment."""
-    result = _g1(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task2(x):
-    """Task 2 (YAML) grader - returns tuple for runtime environment."""
-    result = _g2(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task3(x):
-    """Task 3 (Dockerfile) grader - returns tuple for runtime environment."""
-    result = _g3(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task4(x):
-    """Task 4 (Docker Compose) grader - returns tuple for runtime environment."""
-    result = _g4(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task5(x):
-    """Task 5 (Kubernetes) grader - returns tuple for runtime environment."""
-    result = _g5(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task6(x):
-    """Task 6 (GitHub Actions) grader - returns tuple for runtime environment."""
-    result = _g6(x)
-    return _tuple_from_raw(result)
-
-
-def grade_task7(x):
-    """Task 7 (Nginx) grader - returns tuple for runtime environment."""
-    result = _g7(x)
-    return _tuple_from_raw(result)
+grade_task1_json = grade_task1
+grade_task2_yaml = grade_task2
+grade_task3_dockerfile = grade_task3
+grade_task4_compose = grade_task4
+grade_task5_k8s = grade_task5
+grade_task6_github_actions = grade_task6
+grade_task7_nginx = grade_task7

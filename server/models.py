@@ -12,6 +12,7 @@ class ConfigDebugObservation(Observation):
     Inherits done: bool, reward: Optional[float], metadata from Observation.
     """
     broken_config: str = ""
+    ground_truth: str = ""  # Solution config for validator verification
     file_type: str = ""
     error_message: str = ""
     task_id: str = ""

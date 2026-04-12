@@ -3,49 +3,92 @@ from typing import Tuple, List
 
 def grade_task7(fixed_config: str) -> Tuple[float, str, List[str]]:
     """
-    Grade Task 7: Multi-step nginx config debugging.
+    Grade Task 7: Nginx reverse proxy config (3 bugs, progressive grading).
     
-    Bug 1: Missing semicolons in listen and error_log directives → 0.3 reward
-    Bug 2: Missing http:// prefix in proxy_pass directive → +0.3 reward
-    Bug 3: Improper routing with missing API endpoint headers → +0.4 reward
+    Progressive Validation:
+    1. Syntax: All directives must end with semicolons
+    2. Protocol: proxy_pass directives must include http:// prefix
+    3. Routing: API endpoint must have proper headers and path
+    
+    Bugs:
+    - Bug 1 (Syntax): Missing semicolons in listen, error_log, proxy_pass directives
+    - Bug 2 (Protocol): proxy_pass for / missing http:// prefix
+    - Bug 3 (Routing): API endpoint path or headers incomplete
     
     Returns: (reward, error_message, bugs_fixed_list)
+    Reward is emergent from fixes.
     """
-    reward = 0.05
+    bugs_fixed = []
     errors = []
-    fixed = []
+    reward = 0.05
 
     config = fixed_config.strip()
 
-    # --- STEP 1: Syntax checks (semicolons) ---
-    if "listen 80;" in config and "error_log logs/error.log;" in config:
-        reward += 0.3
-        fixed.append("syntax")
+    # ===== LEVEL 1: SYNTAX VALIDATION (Semicolons) =====
+    required_lines_with_semicolons = [
+        "listen 80;",
+        "error_log logs/error.log;",
+    ]
+    
+    # Check main location / proxy_pass has both http:// AND semicolon
+    has_main_proxy_correct = (
+        "proxy_pass http://localhost:3000;" in config
+    )
+    
+    syntax_checks = [
+        ("listen 80;" in config, "Missing semicolon after 'listen 80'"),
+        ("error_log logs/error.log;" in config, "Missing semicolon after 'error_log'"),
+        (has_main_proxy_correct, "proxy_pass for '/' missing http:// or semicolon"),
+    ]
+    
+    syntax_passed = all(check[0] for check in syntax_checks)
+    
+    if syntax_passed:
+        bugs_fixed.append("syntax_semicolons_valid")
+        reward += 0.35
     else:
-        errors.append("Missing semicolon in listen or error_log directives")
+        for check, error in syntax_checks:
+            if not check:
+                errors.append(error)
 
-    # --- STEP 2: Directive correctness (proxy_pass protocol) ---
-    if "proxy_pass http://localhost:3000;" in config:
-        reward += 0.3
-        fixed.append("proxy_pass")
-    else:
-        errors.append("proxy_pass for / must include http:// protocol prefix (e.g., http://localhost:3000;)")
-
-    # --- STEP 3: Routing logic (API endpoint with headers) ---
-    if ("location /api/" in config or "location /api {" in config):
-        if "proxy_set_header Host" in config and "proxy_set_header X-Real-IP" in config:
-            reward += 0.4
-            fixed.append("routing")
+    # ===== LEVEL 2: PROTOCOL VALIDATION =====
+    # Only proceed if syntax is mostly fixed
+    if "syntax_semicolons_valid" in bugs_fixed:
+        # Main location must use http://
+        if "location / {" in config:
+            if "proxy_pass http://localhost:3000;" in config:
+                bugs_fixed.append("protocol_valid")
+                reward += 0.30
+            else:
+                errors.append("location / requires 'proxy_pass http://localhost:3000;'")
         else:
-            errors.append("API routing missing required proxy headers (Host and X-Real-IP)")
-    else:
-        errors.append("Improper API route configuration (use 'location /api/' with headers)")
+            errors.append("Missing or malformed 'location /' directive")
 
-    reward = round(min(reward, 1.0), 2)
+    # ===== LEVEL 3: ROUTING LOGIC VALIDATION =====
+    # Check API endpoint routing
+    if "syntax_semicolons_valid" in bugs_fixed:
+        api_check = (
+            ("location /api/" in config or "location /api {" in config) and
+            "proxy_set_header Host $host;" in config and
+            "proxy_set_header X-Real-IP $remote_addr;" in config
+        )
+        
+        if api_check:
+            bugs_fixed.append("routing_headers_valid")
+            reward += 0.30
+        else:
+            errors.append(
+                "API route missing proper headers or path. "
+                "Required: 'location /api/', 'proxy_set_header Host $host;', 'proxy_set_header X-Real-IP $remote_addr;'"
+            )
 
-    if reward == 1.0:
-        return 0.95, "Nginx config fully valid", fixed
+    # ===== FINAL REWARD CALCULATION =====
+    reward = min(0.99, reward)
+    if len(bugs_fixed) == 3:  # All bugs fixed
+        reward = 0.99
+    
+    reward = max(0.01, min(0.99, reward))
+    
+    error_msg = " ; ".join(errors) if errors else "All checks passed!"
+    return reward, error_msg, bugs_fixed
 
-    # Clamp to strict (0,1) range for validator
-    reward = max(0.05, min(0.95, reward))
-    return reward, " ; ".join(errors), fixed

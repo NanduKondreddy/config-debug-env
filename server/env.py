@@ -88,14 +88,14 @@ def _build_state() -> ConfigDebugState:
 # --- API Endpoints ---
 
 
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
-
-
 @app.get("/info")
 def info():
     return {"name": "ConfigDebugEnv", "version": "1.0.0", "status": "running"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/reset")
@@ -110,7 +110,13 @@ def reset(task_id: str = None):
 
     return {
         "observation": observation.model_dump(),
+        "reward": 0.0,
+        "done": False,
         "state": state.model_dump(),
+        "info": {
+            "task_id": _get_current_task_id(),
+            "tasks_total": len(env_state.task_ids),
+        },
     }
 
 
@@ -199,7 +205,6 @@ def observation():
     return _build_observation().model_dump()
 
 
-
 @app.get("/metadata")
 def metadata():
     return {
@@ -207,38 +212,37 @@ def metadata():
         "version": "1.0.0",
         "description": "Config file debugging environment",
         "tasks": [
-            {"id": "task1_json", "name": "JSON Config Debug", "difficulty": "easy", "num_bugs": 2, "has_grader": True, "grader": "server.graders.json_grader:grade_task1"},
-            {"id": "task2_yaml", "name": "YAML Config Debug", "difficulty": "easy", "num_bugs": 2, "has_grader": True, "grader": "server.graders.yaml_grader:grade_task2"},
-            {"id": "task3_dockerfile", "name": "Dockerfile Debug", "difficulty": "medium", "num_bugs": 3, "has_grader": True, "grader": "server.graders.dockerfile_grader:grade_task3"},
-            {"id": "task4_compose", "name": "Docker Compose Debug", "difficulty": "medium", "num_bugs": 4, "has_grader": True, "grader": "server.graders.compose_grader:grade_task4"},
-            {"id": "task5_k8s", "name": "Kubernetes Config Debug", "difficulty": "hard", "num_bugs": 5, "has_grader": True, "grader": "server.graders.k8s_grader:grade_task5"},
-            {"id": "task6_github_actions", "name": "GitHub Actions Debug", "difficulty": "hard", "num_bugs": 5, "has_grader": True, "grader": "server.graders.github_actions_grader:grade_task6"},
-            {"id": "task7_nginx", "name": "Nginx Config Debug", "difficulty": "very_hard", "num_bugs": 6, "has_grader": True, "grader": "server.graders.nginx_grader:grade_task7"},
+            {"id": "task1_json", "difficulty": "easy", "num_bugs": 2, "has_grader": True, "grader": "server.graders.grader_api:grade_task1"},
+            {"id": "task2_yaml", "difficulty": "easy", "num_bugs": 2, "has_grader": True, "grader": "server.graders.grader_api:grade_task2"},
+            {"id": "task3_dockerfile", "difficulty": "medium", "num_bugs": 3, "has_grader": True, "grader": "server.graders.grader_api:grade_task3"},
+            {"id": "task4_compose", "difficulty": "medium", "num_bugs": 4, "has_grader": True, "grader": "server.graders.grader_api:grade_task4"},
+            {"id": "task5_k8s", "difficulty": "hard", "num_bugs": 5, "has_grader": True, "grader": "server.graders.grader_api:grade_task5"},
+            {"id": "task6_github_actions", "difficulty": "hard", "num_bugs": 5, "has_grader": True, "grader": "server.graders.grader_api:grade_task6"},
+            {"id": "task7_nginx", "difficulty": "very_hard", "num_bugs": 6, "has_grader": True, "grader": "server.graders.grader_api:grade_task7"},
         ],
         "action_model": "ConfigDebugAction",
         "observation_model": "ConfigDebugObservation",
-        "state_model": "ConfigDebugState",
     }
 
 
 @app.get("/tasks")
 def tasks():
-    """Return list of all tasks with grader information."""
     return {
         "tasks": [
             {
                 "id": tid,
                 "name": get_task(tid).description,
                 "difficulty": get_task(tid).difficulty,
-                "file_type": get_task(tid).file_type,
                 "num_bugs": get_task(tid).num_bugs,
                 "has_grader": True,
+                "grader": f"server.graders.grader_api:grade_{tid}",
             }
             for tid in TASK_ORDER
         ],
         "total_tasks": len(TASK_ORDER),
         "tasks_with_graders": len(TASK_ORDER),
     }
+
 
 @app.get("/schema")
 def schema():

@@ -1,7 +1,28 @@
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, Tuple, List
 
-from server.tasks import task1_json, task2_yaml, task3_dockerfile, task4_compose, task5_k8s, task6_github_actions, task7_nginx
-from server.graders.grader_api import grade_task1_float, grade_task2_float, grade_task3_float, grade_task4_float, grade_task5_float, grade_task6_float, grade_task7_float
+from server.tasks import task1_json, task2_yaml, task3_dockerfile
+from server.tasks import task4_compose, task5_k8s, task6_github_actions, task7_nginx
+
+# INTERNAL USE: Import directly from raw grader files (return tuples)
+# grader_api.py is separate and returns float-only (for openenv.yaml validator)
+from server.graders.json_grader import grade_task1
+from server.graders.yaml_grader import grade_task2
+from server.graders.dockerfile_grader import grade_task3
+from server.graders.compose_grader import grade_task4
+from server.graders.k8s_grader import grade_task5
+from server.graders.github_actions_grader import grade_task6
+from server.graders.nginx_grader import grade_task7
+
+
+def _clamp_grader(fn):
+    """Wrap raw grader to clamp reward to (0.01, 0.99) while preserving tuple return."""
+    def wrapper(submitted_config: str) -> Tuple[float, str, List[str]]:
+        reward, error_msg, bugs_fixed = fn(submitted_config)
+        reward = max(0.01, min(0.99, float(reward)))
+        return reward, error_msg, bugs_fixed
+    wrapper.__name__ = fn.__name__
+    wrapper.__qualname__ = fn.__qualname__
+    return wrapper
 
 
 class TaskInfo:
@@ -14,9 +35,7 @@ class TaskInfo:
         self.broken_config: str = module.BROKEN_CONFIG
         self.error_message: str = module.ERROR_MESSAGE
         self.ground_truth: str = module.GROUND_TRUTH
-        # Grader returns float (for validator compatibility)
-        # Environment will handle conversion to tuple format if needed
-        self.grader: Callable[[str], float] = grader_func
+        self.grader: Callable[[str], Tuple[float, str, List[str]]] = grader_func
 
 
 TASK_ORDER = [
@@ -30,13 +49,13 @@ TASK_ORDER = [
 ]
 
 TASK_REGISTRY: Dict[str, TaskInfo] = {
-    "task1_json": TaskInfo(task1_json, grade_task1_float),
-    "task2_yaml": TaskInfo(task2_yaml, grade_task2_float),
-    "task3_dockerfile": TaskInfo(task3_dockerfile, grade_task3_float),
-    "task4_compose": TaskInfo(task4_compose, grade_task4_float),
-    "task5_k8s": TaskInfo(task5_k8s, grade_task5_float),
-    "task6_github_actions": TaskInfo(task6_github_actions, grade_task6_float),
-    "task7_nginx": TaskInfo(task7_nginx, grade_task7_float),
+    "task1_json": TaskInfo(task1_json, _clamp_grader(grade_task1)),
+    "task2_yaml": TaskInfo(task2_yaml, _clamp_grader(grade_task2)),
+    "task3_dockerfile": TaskInfo(task3_dockerfile, _clamp_grader(grade_task3)),
+    "task4_compose": TaskInfo(task4_compose, _clamp_grader(grade_task4)),
+    "task5_k8s": TaskInfo(task5_k8s, _clamp_grader(grade_task5)),
+    "task6_github_actions": TaskInfo(task6_github_actions, _clamp_grader(grade_task6)),
+    "task7_nginx": TaskInfo(task7_nginx, _clamp_grader(grade_task7)),
 }
 
 
@@ -46,13 +65,3 @@ def get_task(task_id: str) -> TaskInfo:
 
 def get_all_task_ids() -> List[str]:
     return list(TASK_ORDER)
-
-
-# Diagnostic logging on module load
-print(f"[TASK REGISTRY] Loaded tasks: {list(TASK_REGISTRY.keys())}", flush=True)
-
-for tid, task in TASK_REGISTRY.items():
-    print(
-        f"[TASK] id={tid} grader={task.grader.__name__} file_type={task.file_type} num_bugs={task.num_bugs}",
-        flush=True
-    )

@@ -74,19 +74,38 @@ Each task has **3 progressive levels**:
 
 ---
 
-## The 7 Tasks (Progressive Difficulty)
+## The 7 Tasks (Progressive Complexity)
+
+### Benchmark Quality Design
+Each task is carefully crafted with **realistic, interdependent bugs** that require progressive debugging:
+
+| Task | Format | Difficulty | Bugs | Description | Requires Multi-Step Fix? |
+|------|--------|------------|------|-------------|------------------------|
+| **task1_json** | JSON | Medium | 3 | Microservice config: missing comma, env structure bug, volumes structure bug | ✓ Yes |
+| **task2_yaml** | YAML | Medium | 3 | CI/CD pipeline: indentation error, env array→object, missing job timeouts | ✓ Yes |
+| **task3_dockerfile** | Dockerfile | Medium | 3 | Multi-stage build: base image, build args, runtime setup | ✓ Progressive |
+| **task4_compose** | Docker-Compose | Medium | 4 | Service mesh: compose syntax, volumes, service networking | ✓ Progressive |
+| **task5_k8s** | Kubernetes | Hard | 3 | Deployment manifest: type errors, missing fields, configuration validation | ✓ Yes |
+| **task6_github_actions** | GitHub Actions | Hard | 5 | Workflow automation: YAML syntax, job dependencies, environment configuration | ✓ Yes |
+| **task7_nginx** | Nginx config | Very Hard | 3 | Reverse proxy: syntax (semicolons), protocol prefix, routing headers | ✓ Yes |
+
+### Grading Philosophy
+Graders use **progressive, dependency-aware validation**:
+- **Level 1**: Syntax pass/fail (foundational)
+- **Level 2**: Structure validation (builds on syntax pass)
+- **Level 3**: Semantic correctness (builds on structure pass)
+
+Rewards are **emergent from fixes**, not hand-tuned. Example for task1_json:
+- Syntax error only: 0.05 (penalty state)
+- Syntax fixed: +0.3 → 0.35
+- Structure fixed: +0.25 → 0.60
+- All semantics fixed: +0.35 → 0.95 ✅
+
+---
+
+## The 7 Tasks (Original Overview)
 
 | Task | Format | Difficulty | Bugs | Key Challenge |
-|------|--------|------------|------|----------------|
-| **task1_json** | JSON | Easy | 2 | Type detection |
-| **task2_yaml** | YAML | Easy | 2 | Indentation / structure |
-| **task3_dockerfile** | Dockerfile | Medium | 3 | Multi-stage builds |
-| **task4_compose** | docker-compose | Medium | 4 | Service networking |
-| **task5_k8s** | Kubernetes | Hard | 3* | Multi-step type/domain fixes |
-| **task6_github_actions** | GitHub Actions | Hard | 5 | Workflow triggers |
-| **task7_nginx** | Nginx config | Very Hard | 3* | Multi-step directive/routing fixes |
-
-*task5_k8s and task7_nginx optimized for multi-step learning with targeted error guidance
 
 ---
 

@@ -4,9 +4,9 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 7860
-description: "An RL environment for training AI agents to debug broken configuration files"
-version: "1.0.0"
-author: "meta-hackathon-participant"
+description: An RL environment for training AI agents to debug broken configuration files
+version: 1.0.0
+author: meta-hackathon-participant
 tags:
   - devops
   - configuration
@@ -19,44 +19,44 @@ state_model: server.models:ConfigDebugState
 
 tasks:
   - id: task1_json
-    name: "JSON Config Debug"
+    name: JSON Config Debug
     difficulty: easy
     num_bugs: 2
-    grader: server.graders.grader_api:grade_task1
+    grader: server.graders.grader_api:Task1Grader
     has_grader: true
   - id: task2_yaml
-    name: "YAML Config Debug"
+    name: YAML Config Debug
     difficulty: easy
     num_bugs: 2
-    grader: server.graders.grader_api:grade_task2
+    grader: server.graders.grader_api:Task2Grader
     has_grader: true
   - id: task3_dockerfile
-    name: "Dockerfile Debug"
+    name: Dockerfile Debug
     difficulty: medium
     num_bugs: 3
-    grader: server.graders.grader_api:grade_task3
+    grader: server.graders.grader_api:Task3Grader
     has_grader: true
   - id: task4_compose
-    name: "Docker Compose Debug"
+    name: Docker Compose Debug
     difficulty: medium
     num_bugs: 4
-    grader: server.graders.grader_api:grade_task4
+    grader: server.graders.grader_api:Task4Grader
     has_grader: true
   - id: task5_k8s
-    name: "Kubernetes Config Debug"
+    name: Kubernetes Config Debug
     difficulty: hard
     num_bugs: 5
-    grader: server.graders.grader_api:grade_task5
+    grader: server.graders.grader_api:Task5Grader
     has_grader: true
   - id: task6_github_actions
-    name: "GitHub Actions Debug"
+    name: GitHub Actions Debug
     difficulty: hard
     num_bugs: 5
-    grader: server.graders.grader_api:grade_task6
+    grader: server.graders.grader_api:Task6Grader
     has_grader: true
   - id: task7_nginx
-    name: "Nginx Config Debug"
+    name: Nginx Config Debug
     difficulty: very_hard
-    num_bugs: 3
-    grader: server.graders.grader_api:grade_task7
+    num_bugs: 6
+    grader: server.graders.grader_api:Task7Grader
     has_grader: true

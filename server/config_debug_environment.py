@@ -2,9 +2,6 @@
 
 Inherits from openenv.core.env_server.Environment and implements
 the standard reset/step/state interface with multi-task logic.
-
-Note: This environment is for task/grading only.
-LLM-based solving happens in inference.py (external runner).
 """
 from typing import Optional, Any
 from uuid import uuid4
@@ -19,11 +16,8 @@ MAX_STEPS_PER_TASK = 5
 class ConfigDebugEnvironment(Environment):
     """Multi-task config debugging environment.
 
-    Manages tasks internally. Each WebSocket session
+    Manages 7 sequential tasks internally. Each WebSocket session
     (via create_fastapi_app) gets its own instance with independent state.
-    
-    This environment ONLY handles task definitions and grading.
-    LLM solving is performed externally by inference.py.
     """
 
     SUPPORTS_CONCURRENT_SESSIONS = True
@@ -55,34 +49,35 @@ class ConfigDebugEnvironment(Environment):
         return self._build_observation()
 
     def step(self, action: ConfigDebugAction, timeout_s: Optional[float] = None, **kwargs: Any) -> ConfigDebugObservation:
-        """Process an action: grade the submitted fixed_config."""
+        """Process an action: run the grader, advance tasks if done."""
         if self._done:
             return self._build_observation()
 
         task_id = self._current_task_id()
         task = get_task(task_id)
 
-        # Run the grader on the submitted fixed_config
+        # Run the grader - returns (reward, error_message, bugs_fixed) tuple
         grader_result = task.grader(action.fixed_config)
-        
-        # Convert to internal tuple format (reward, error_msg, bugs_fixed)
-        if isinstance(grader_result, tuple):
-            reward, error_message, bugs_fixed = grader_result
-        else:
-            # Grader returns float - convert to tuple
-            reward = grader_result
+
+        # Parse grader result
+        if isinstance(grader_result, tuple) and len(grader_result) >= 3:
+            reward = float(grader_result[0])
+            error_message = str(grader_result[1])
+            bugs_fixed = list(grader_result[2])
+        elif isinstance(grader_result, tuple) and len(grader_result) >= 1:
+            reward = float(grader_result[0])
             error_message = ""
             bugs_fixed = []
-        
-        # Log grader result
-        print(
-            f"[GRADER] task={task_id} "
-            f"reward={reward:.4f} "
-            f"bugs_fixed={len(bugs_fixed)}",
-            flush=True
-        )
-        
-        reward = max(0.0, min(1.0, reward))
+        elif isinstance(grader_result, (int, float)):
+            reward = float(grader_result)
+            error_message = ""
+            bugs_fixed = []
+        else:
+            reward = 0.01
+            error_message = "Grader returned unexpected format"
+            bugs_fixed = []
+
+        reward = max(0.01, min(0.99, reward))
 
         self.current_step += 1
         self._global_step += 1
@@ -134,7 +129,6 @@ class ConfigDebugEnvironment(Environment):
             is_done=self._done,
             tasks_completed=list(self.tasks_completed),
             tasks_remaining=tasks_remaining,
-            # Enhanced RL signals
             bugs_found_so_far=self.bugs_found_so_far,
             current_error_message=self.current_error_message,
             progress_ratio=round(progress_ratio, 2),
@@ -156,6 +150,7 @@ class ConfigDebugEnvironment(Environment):
 
         return ConfigDebugObservation(
             broken_config=broken,
+            ground_truth=task.ground_truth,
             file_type=task.file_type,
             error_message=error,
             task_id=task.task_id,

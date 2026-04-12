@@ -8,9 +8,9 @@ DESCRIPTION = (
     "Requires fixing syntax (semicolons), directives (protocol), and routing logic (headers)."
 )
 
-# Bug 1 (Syntax): Missing semicolons in listen and error_log directives
-# Bug 2 (Directive): proxy_pass missing http:// protocol prefix
-# Bug 3 (Logic): Improper routing with missing headers for API endpoint
+# Bug 1 (Syntax): Missing semicolons in listen, error_log, and proxy_pass directives
+# Bug 2 (Protocol): proxy_pass for / missing http:// protocol prefix
+# Bug 3 (Routing): API endpoint missing headers
 BROKEN_CONFIG = """events {}
 
 http {
@@ -21,10 +21,8 @@ http {
             proxy_pass localhost:3000
         }
 
-        location /api {
+        location /api/ {
             proxy_pass http://localhost:5000
-            proxy_set_header Host $host
-            proxy_set_header X-Real-IP $remote_addr
         }
 
         error_log logs/error.log
@@ -33,7 +31,7 @@ http {
 
 ERROR_MESSAGE = (
     "nginx configuration has syntax, directive, and routing errors: "
-    "missing semicolons, missing http:// prefix in proxy_pass, and improper API routing."
+    "missing semicolons, missing http:// prefix in proxy_pass, and missing required headers in API routing."
 )
 
 GROUND_TRUTH = """events {}

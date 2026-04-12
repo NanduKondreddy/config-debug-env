@@ -1,43 +1,62 @@
 TASK_ID = "task2_yaml"
-DIFFICULTY = "easy"
+DIFFICULTY = "medium"
 FILE_TYPE = "yaml"
-NUM_BUGS = 2
+NUM_BUGS = 3
 
 DESCRIPTION = (
-    "A service configuration file in YAML format. "
-    "It should define the service name, version, port, host, database settings, "
-    "and logging configuration with proper indentation and all required fields."
+    "A CI/CD pipeline configuration in YAML format. "
+    "It defines stages, environment variables, and job specifications. "
+    "This is a realistic scenario from GitHub Actions / GitLab CI pipelines."
 )
 
 # The broken config (what the agent sees)
 # Bug 1 (Syntax): Wrong indentation on nested key (3 spaces instead of 2)
-# Bug 2 (Semantic): Missing required field "version"
-BROKEN_CONFIG = """service:
-  name: my-service
-  port: 8080
-  host: 0.0.0.0
-  database:
-     host: localhost
-     port: 5432
-   name: mydb
-  logging:
-    level: info
-    format: json"""
+# Bug 2 (Structural): env section is array instead of object
+# Bug 3 (Semantic): Missing required 'timeout' field under jobs
+BROKEN_CONFIG = """pipeline:
+  name: ci-pipeline
+  stages:
+    - build
+    - test
+    - deploy
+  env:
+    - CI: "true"
+    - REGISTRY: "docker.io"
+  jobs:
+     build_job:
+      stage: build
+      script:
+        - npm install
+        - npm run build
+    test_job:
+      stage: test
+      script:
+        - npm test"""
 
 ERROR_MESSAGE = (
-    "YAML parse error: mapping values are not allowed in this context. "
-    "Additionally, the configuration may be missing required fields."
+    "YAML parse error: mapping values are not allowed in this context (indentation issue). "
+    "Additionally, 'env' is an array instead of an object, "
+    "and jobs are missing 'timeout' specifications."
 )
 
-GROUND_TRUTH = """service:
-  name: my-service
-  version: "1.0.0"
-  port: 8080
-  host: 0.0.0.0
-  database:
-    host: localhost
-    port: 5432
-    name: mydb
-  logging:
-    level: info
-    format: json"""
+GROUND_TRUTH = """pipeline:
+  name: ci-pipeline
+  stages:
+    - build
+    - test
+    - deploy
+  env:
+    CI: "true"
+    REGISTRY: "docker.io"
+  jobs:
+    build_job:
+      stage: build
+      timeout: 3600
+      script:
+        - npm install
+        - npm run build
+    test_job:
+      stage: test
+      timeout: 1800
+      script:
+        - npm test"""
