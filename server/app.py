@@ -88,6 +88,17 @@ def health():
 def metadata():
     """Metadata endpoint with grader paths for validator discovery."""
     print("[VALIDATOR] GET /metadata called")
+    
+    task_grader_map = {
+        "task1_json": "Task1Grader",
+        "task2_yaml": "Task2Grader",
+        "task3_dockerfile": "Task3Grader",
+        "task4_compose": "Task4Grader",
+        "task5_k8s": "Task5Grader",
+        "task6_github_actions": "Task6Grader",
+        "task7_nginx": "Task7Grader",
+    }
+    
     return {
         "name": "ConfigDebugEnvironment",
         "description": "An environment for training AI agents to debug broken configuration files",
@@ -96,7 +107,7 @@ def metadata():
             {
                 "id": tid,
                 "has_grader": True,
-                "grader": f"server.graders.grader_api:grade_{tid}",
+                "grader": f"server.graders.grader_api:{task_grader_map[tid]}",
             }
             for tid in TASK_ORDER
         ],
@@ -137,25 +148,25 @@ async def grader_endpoint(request: Request):
             body.get("action", {}).get("fixed_config", "{}"))
 
         from server.graders.grader_api import (
-            grade_task1, grade_task2, grade_task3,
-            grade_task4, grade_task5, grade_task6, grade_task7,
+            Task1Grader, Task2Grader, Task3Grader,
+            Task4Grader, Task5Grader, Task6Grader, Task7Grader,
         )
 
         grader_map = {
-            "task1_json": grade_task1,
-            "task2_yaml": grade_task2,
-            "task3_dockerfile": grade_task3,
-            "task4_compose": grade_task4,
-            "task5_k8s": grade_task5,
-            "task6_github_actions": grade_task6,
-            "task7_nginx": grade_task7,
+            "task1_json": Task1Grader(),
+            "task2_yaml": Task2Grader(),
+            "task3_dockerfile": Task3Grader(),
+            "task4_compose": Task4Grader(),
+            "task5_k8s": Task5Grader(),
+            "task6_github_actions": Task6Grader(),
+            "task7_nginx": Task7Grader(),
         }
 
-        grader_fn = grader_map.get(task_id)
-        if grader_fn is None:
+        grader = grader_map.get(task_id)
+        if grader is None:
             return {"error": f"Unknown task_id: {task_id}", "score": 0.01}
 
-        score = grader_fn(submitted_config)
+        score = grader.grade(submitted_config)
         print(f"[GRADER] task={task_id} score={score}")
         return {"task_id": task_id, "score": score, "has_grader": True}
     except Exception as e:
@@ -165,6 +176,15 @@ async def grader_endpoint(request: Request):
 
 @app.get("/tasks")
 def tasks():
+    task_grader_map = {
+        "task1_json": "Task1Grader",
+        "task2_yaml": "Task2Grader",
+        "task3_dockerfile": "Task3Grader",
+        "task4_compose": "Task4Grader",
+        "task5_k8s": "Task5Grader",
+        "task6_github_actions": "Task6Grader",
+        "task7_nginx": "Task7Grader",
+    }
     return {
         "tasks": [
             {
@@ -174,7 +194,7 @@ def tasks():
                 "file_type": get_task(tid).file_type,
                 "num_bugs": get_task(tid).num_bugs,
                 "has_grader": True,
-                "grader": f"server.graders.grader_api:grade_{tid}",
+                "grader": f"server.graders.grader_api:{task_grader_map[tid]}",
             }
             for tid in TASK_ORDER
         ],

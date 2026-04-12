@@ -42,10 +42,16 @@ class ConfigDebugEnvironment(Environment):
     # ---- OpenEnv interface methods ----
 
     def reset(self, seed: Optional[int] = None, episode_id: Optional[str] = None, **kwargs: Any) -> ConfigDebugObservation:
-        """Reset environment to initial state (task 1)."""
+        """Reset environment. Supports task_id kwarg for per-task validation."""
         self._init_episode()
         if episode_id:
             self._episode_id = episode_id
+        
+        # Allow validator to reset to a specific task
+        task_id = kwargs.get("task_id")
+        if task_id and task_id in self.task_ids:
+            self.current_task_index = self.task_ids.index(task_id)
+        
         return self._build_observation()
 
     def step(self, action: ConfigDebugAction, timeout_s: Optional[float] = None, **kwargs: Any) -> ConfigDebugObservation:
